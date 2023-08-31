@@ -1,5 +1,6 @@
 --DROP DATABASE BDEGEMSA;
 
+
 CREATE DATABASE	BDEGEMSA;
 
 USE  BDEGEMSA;
@@ -50,7 +51,7 @@ CREATE TABLE PersonaNatural (
 
 CREATE TABLE CatalogoTipoUsuario (
 	TipoUsuarioID		INT PRIMARY KEY IDENTITY(1,1),
-	DEscripcion				VARCHAR(50) NOT NULL UNIQUE,
+	Descripcion				VARCHAR(50) NOT NULL UNIQUE,
 	Estado				BIT DEFAULT 1,
 	FechaRegistro		DATETIME DEFAULT GETDATE(),
 );
@@ -79,7 +80,7 @@ CREATE TABLE Plazo (
 	FechaRegistro		DATETIME DEFAULT GETDATE(),
 );
 
-CREATE TABLE CatalogoFormaEntrega ( --AGREGAR si GEENERA COSTO
+CREATE TABLE CatalogoFormaEntrega (
 	FormaEntregaID		INT PRIMARY KEY IDENTITY(1,1),
 	Descripcion			VARCHAR(50) NOT NULL UNIQUE,
 	GeneraCosto			BIT DEFAULT 0,
@@ -96,15 +97,18 @@ CREATE TABLE Usuario (
 	Usuario			VARCHAR(30) NOT NULL UNIQUE,
 	Pass			NVARCHAR(200) NOT NULL UNIQUE,
 	Correo			NVARCHAR(50) NOT NULL UNIQUE,
-	PersonaID		INT REFERENCES PersonaNatural(PersonaNaturalID),
+	Nombres				VARCHAR(50) NOT NULL,
+	ApellidoPaterno		VARCHAR(50) NOT NULL,
+	ApellidoMaterno		VARCHAR(50) NOT NULL,
 	Estado			BIT DEFAULT 1,
 	FechaRegistro	DATETIME DEFAULT GETDATE(),
 );
 
-CREATE TABLE Tarea (--definir si l ohace el sistema o la persona
+CREATE TABLE Tarea (
 	TareaID			INT PRIMARY KEY IDENTITY(1,1),
 	Descripcion		VARCHAR(100) NOT NULL , 
 	EstadoID		INT REFERENCES CatalogoEstado(EstadoID),
+	AccionSistema	BIT DEFAULT 1,
 	Estado			BIT DEFAULT 1,
 	FechaRegistro	DATETIME DEFAULT GETDATE(),
 );
@@ -122,12 +126,12 @@ CREATE TABLE Area (
 
 CREATE TABLE Responsable (
 	ResponsableID		INT PRIMARY KEY IDENTITY(1,1),
-	PersonaNaturalID	INT NOT NULL REFERENCES PersonaNatural(PersonaNaturalID),
+	UsuarioID	INT NOT NULL REFERENCES Usuario(UsuarioID),
 	AreaID				INT NOT NULL REFERENCES Area(AreaID),
 	Correo				NVARCHAR(50) NOT NULL,
 	Estado				BIT DEFAULT 1,
 	FechaRegistro		DATETIME DEFAULT GETDATE(),
-	CONSTRAINT uk_personaid_areaid_correo UNIQUE (PersonaNaturalID, AreaID, Correo),
+	CONSTRAINT uk_personaid_areaid_correo UNIQUE (UsuarioID, AreaID, Correo),
 );
 
 
@@ -161,8 +165,8 @@ CREATE TABLE Solicitud (
 	FechaPresentacion			DATETIME DEFAULT GETDATE(),
 	FechaVencimiento			DATETIME DEFAULT NULL,
 	FechaVencimientoProrroga	DATETIME DEFAULT NULL,
-	PlazoMaximo					SMALLINT NOT NULL,
-	Prorroga					SMALLINT NOT NULL,
+	PlazoMaximo					SMALLINT NULL,
+	Prorroga					SMALLINT NULL,
 	Observacion					VARCHAR(100) NULL,
 	Estado						BIT DEFAULT 1,
 	FechaRegistro				DATETIME DEFAULT GETDATE(),
@@ -264,8 +268,8 @@ END CATCH;
 BEGIN TRANSACTION;
 BEGIN TRY
 
-	INSERT INTO Usuario(Usuario, Pass, Correo, PersonaID) VALUES
-	('admin','123','test@hotmail.com',1);
+	INSERT INTO Usuario(Usuario, Pass, Correo, Nombres, ApellidoPaterno, ApellidoMaterno) VALUES
+	('admin','123','test@hotmail.com','Rodolgo','Cueva', 'Santos');
 
 	COMMIT;
 END TRY
@@ -290,7 +294,7 @@ END CATCH;
 BEGIN TRANSACTION;
 BEGIN TRY
 
-	INSERT INTO Responsable(PersonaNaturalID, AreaID,Correo) VALUES
+	INSERT INTO Responsable(UsuarioID, AreaID,Correo) VALUES
 	(1,1,'test@hotmail.com');
 
 	COMMIT;
@@ -316,27 +320,27 @@ END CATCH;
 BEGIN TRANSACTION;
 BEGIN TRY
 
-	INSERT INTO Tarea(Descripcion, EstadoID) VALUES
-	('Registro por parte del Administrado',1), 
-('Revision por parte del FRAI',2),
-('Revision por parte del FRAI',3),
-('Notificacion a MPV', 3),
-('Registro del codigo SIGEDD', 3),
-('Derivacion a la clasificacion de la informacion publica', 4),
-('Notificacion del codigo SIGEDD al administrado', 2),
-('Notificacion del codigo SIGEDD al administrado', 4),
-('Resultado de la clasificacion de la informacion publica - Atendida', 5),
-('Notificacion del resultado de la clasificacion al administrado', 5),
-('Recepcion de la notificacion del resultado de la clasificiacion al administrado', 6),
-('Resultado de la clasificacion de la informacion publica - Derivado', 4),
-('Consulta individual a los responsables para disponer con la informacion requerida', 4),
-('Repuesta individual sobre la disposicion de la informacion requerida', 4),
-('Resultado de la consulta por la informacion total requerida', 5),
-('Acopio de documentos por areas', 4),
-('Solicitar a realizar el pago correspondiente', 4),
-('Recepcion voucher', 4),
-('Validacion conforme del pago', 4),
-('Confirmacion de la recepcion', 6);
+	INSERT INTO Tarea(Descripcion, EstadoID, AccionSistema) VALUES
+	('Registro por parte del Administrado',1,0), 
+('Revision por parte del FRAI',2,0),
+('Revision por parte del FRAI',3,0),
+('Notificacion a MPV', 3,1),
+('Registro del codigo SIGEDD', 3,0),
+('Derivacion a la clasificacion de la informacion publica', 4,0),
+('Notificacion del codigo SIGEDD al administrado', 2,1),
+('Notificacion del codigo SIGEDD al administrado', 4,1),
+('Resultado de la clasificacion de la informacion publica', 5,0),
+('Notificacion del resultado de la clasificacion al administrado', 5,1),
+('Recepcion de la notificacion del resultado de la clasificiacion al administrado', 6,0),
+('Resultado de la clasificacion de la informacion publica', 4,0),
+('Consulta individual a los responsables para disponer con la informacion requerida', 4,0),
+('Repuesta individual sobre la disposicion de la informacion requerida', 4,0),
+('Resultado de la consulta por la informacion total requerida', 5,0),
+('Acopio de documentos por areas', 4,0),
+('Solicitar a realizar el pago correspondiente', 4,0),
+('Recepcion voucher', 4,0),
+('Validacion conforme del pago', 4,0),
+('Confirmacion de la recepcion', 6,0);
 
 	COMMIT;
 END TRY
@@ -360,5 +364,17 @@ END CATCH;
 select * from CatalogoFormaEntrega;
 select * from Area;
 
+select * from bitacora
+select * from Tarea
+select * from Tarea
+select * from solicitud
 
+select * from PersonaNatural
+
+
+--DBCC CHECKIDENT ('solicitud', RESEED, 0)
+
+--delete from solicitud
+
+--delete from bitacora
 
